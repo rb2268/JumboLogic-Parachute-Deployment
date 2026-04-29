@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdbool.h>
-#include <stm32l432xx.h>
+#include "stm32l432xx.h"
 #include "ee14lib.h"
+#include "stage.h"
+#include "time.h"
 
 
 #define I2C_SCL_PIN D1
@@ -16,24 +18,17 @@ int _write(int file, char *data, int len) {
     return len;
 }
 
-void delay_ms(uint32_t delay) {
-    uint32_t ms = systick_counter;
-    ms += delay;
-    while(systick_counter < ms) {
-    }
-    
-}
-
 
 int main()
 {
     host_serial_init(9600);
     i2c_init(I2C1, I2C_SCL_PIN, I2C_SDA_PIN);
+    SysTick_Init();
 
     while (true) {
 
         
-        i2c_read(I2C1, BARO_I2C_ADDR data, 1);// Figure out how to actually read, idk
+        //i2c_read(I2C1, BARO_I2C_ADDR data, 1);// Figure out how to actually read, idk
         
     }
 }
