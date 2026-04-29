@@ -8,8 +8,6 @@
 
 #define I2C_SCL_PIN D1
 #define I2C_SDA_PIN D0
-#define BARO_I2C_ADDR 0x76
-
 
 // This function is called by printf() to handle the text string
 // We want it to be sent over the serial terminal, so we just delegate to that function
@@ -26,9 +24,6 @@ int main()
     SysTick_Init();
 
     while (true) {
-
-        
-        //i2c_read(I2C1, BARO_I2C_ADDR data, 1);// Figure out how to actually read, idk
         
     }
 }
