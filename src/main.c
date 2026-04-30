@@ -31,8 +31,7 @@ void config_gpio_interrupt(void)
     NVIC_EnableIRQ(EXTI0_IRQn);
 }
 
-int main()
-{
+int main() {
     host_serial_init(9600);
     i2c_init(I2C1, I2C_SCL_PIN, I2C_SDA_PIN);
     SysTick_Init();
@@ -100,3 +99,4 @@ int main()
             runButtons(A4);
         }
     }
+}
