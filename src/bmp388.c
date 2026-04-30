@@ -5,34 +5,12 @@
  * communicate with the BMP388 temperature and pressure sensor
  */
 
+#include <stdio.h>
+#include <stdbool.h>
 #include "ee14lib.h"
+#include "bmp388.h"
 
-#define BARO_I2C_ADDR 0x76
-
-// baro register defines
-#define reg_ERR_REG    0x02
-
-#define reg_PRESSURE_H 0x06 // outputs in unsigned 24 bit
-#define reg_PRESSURE_M 0x05
-#define reg_PRESSURE_L 0x04
-
-#define reg_SENSRTIM_H 0x0E // same here
-#define reg_SENSRTIM_M 0x0D
-#define reg_SENSRTIM_L 0x0C
-
-#define reg_FIFO_LEN_H 0x13
-#define reg_FIFO_LEN_L 0x12
-
-#define reg_FIFO_CFG_1 0x17
-#define reg_FIFO_CFG_2 0x18
-
-#define reg_INT_CTRL   0x19
-#define reg_PWR_CTRL   0x1B
-#define reg_OSR        0x1C
-#define reg_ODR        0x1D
-#define reg_CONFIG     0x1F // configure IIR
-
-const float msb_to_pascal = 0.33;
+const float MSB_TO_PASCALS = 0.017368F;
 
 /***
  * Initializes the barometer with the following:
@@ -42,27 +20,27 @@ const float msb_to_pascal = 0.33;
  *  - Configure FIFO for continuous data collection without data loss
  *  - Enable interrupts for nonblocking read
  */
-EE14Lib_Err bmp388_init()
+void bmp388_init()
 {
-    char i2c_transact[2];
+    volatile unsigned char i2c_write_buf[2];
 
     // set iir filter
-    char iir_cfg = 0b10 << 1;
-    i2c_transact[0] = reg_CONFIG;
-    i2c_transact[1] = iir_cfg;
-    i2c_write(I2C1, BARO_I2C_ADDR, i2c_transact, 2);
+    volatile unsigned char iir_cfg = 0b10 << 1;
+    i2c_write_buf[0] = reg_CONFIG;
+    i2c_write_buf[1] = iir_cfg;
+    i2c_write(I2C1, BARO_I2C_ADDR, i2c_write_buf, 2);
 
     // output frequency 50Hz
-    char odr_sel = 0x02;
-    i2c_transact[0] = reg_ODR;
-    i2c_transact[1] = odr_sel;
-    i2c_write(I2C1, BARO_I2C_ADDR, i2c_transact, 2);
+    volatile unsigned char odr_sel = 0x02;
+    i2c_write_buf[0] = reg_ODR;
+    i2c_write_buf[1] = odr_sel;
+    i2c_write(I2C1, BARO_I2C_ADDR, i2c_write_buf, 2);
 
     // pressure oversampling 8x
-    char osr_cfg = 0b011;
-    i2c_transact[0] = reg_OSR;
-    i2c_transact[1] = osr_cfg;
-    i2c_write(I2C1, BARO_I2C_ADDR, i2c_transact, 2);
+    volatile unsigned char osr_cfg = 0b011;
+    i2c_write_buf[0] = reg_OSR;
+    i2c_write_buf[1] = osr_cfg;
+    i2c_write(I2C1, BARO_I2C_ADDR, i2c_write_buf, 2);
 
     // enable fifo bc idk if it's default enabled
     // order of msb --> lsb config bits are:
@@ -71,21 +49,74 @@ EE14Lib_Err bmp388_init()
     //  - Return sensortime frame after the last valid data frame ... 0
     //  - Stop writing samples into FIFO when FIFO is full .......... 0
     //  - Enable fifo ............................................... 1
-    char fifo_cfg = 0b01001;
-    i2c_transact[0] = reg_FIFO_CFG_1;
-    i2c_transact[1] = fifo_cfg;
-    i2c_write(I2C1, BARO_I2C_ADDR, i2c_transact, 2);
+    volatile unsigned char fifo_cfg = 0b01001;
+    i2c_write_buf[0] = reg_FIFO_CFG_1;
+    i2c_write_buf[1] = fifo_cfg;
+    i2c_write(I2C1, BARO_I2C_ADDR, i2c_write_buf, 2);
 
     // interrupts
     // order of msb --> lsb config bits are:
-    //   - enable interrupts .......................................... 1
-    //   - enable Fifo full interrupt for INT pin & status ............ 0
+    //   - enable interrupts .......................................... 0
+    //   - NOT USED ................................................... 0
+    //   - enable FIFO full interrupt for INT pin & status ............ 1
     //   - enable FIFO watermark reached interrupt for INT & Status ... 0
     //   - Latching of interrupts for INT pin & INT_STATUS register ... 0
-    //   - Interrupt pin active low (0) or high (1) ................... 1
+    //   - Interrupt pin active low (0) or high (1) ................... 0
     //   - Configure output: open-drain (1) or push-pull (0) .......... 1
-    char int_cfg = 0b100011;
-    i2c_transact[0] = reg_INT_CTRL;
-    i2c_transact[1] = int_cfg;
-    i2c_write(I2C1, BARO_I2C_ADDR, i2c_transact, 2);
+    volatile unsigned char int_cfg = 0b00000000; // Interrupts are BANNED
+    i2c_write_buf[0] = reg_INT_CTRL;
+    i2c_write_buf[1] = int_cfg;
+    i2c_write(I2C1, BARO_I2C_ADDR, i2c_write_buf, 2);
 }
+
+
+/***
+ * Read once from the sensor
+ */
+float bmp388_process()
+{
+    volatile unsigned char addr = reg_STATUS;
+    volatile unsigned char status;
+    if (i2c_write2read(I2C1, BARO_I2C_ADDR, &addr, 1, &status, 1)) {
+        printf("status: %x\n", status);
+    } else {
+        printf("write 2 read failed\n");
+    }
+
+    return 1.0;
+}
+
+
+
+/***
+ * Handles interrupts from the barometer
+ */
+// void EXTI0_IRQHandler(void) {
+//     if(!(EXTI->PR1 & EXTI_PR1_PIF0)){
+//         return;
+//     }
+
+//     // read from barometer (LITTLE ENDIAN!!)
+//     volatile unsigned char pressure_regaddr = reg_PRESSURE_L;
+//     volatile unsigned char i2c_read_buffer[3];
+//     NVIC_DisableIRQ(EXTI0_IRQn);
+//     i2c_write2read(I2C1, BARO_I2C_ADDR, &pressure_regaddr, 1, i2c_read_buffer, 3); //read is autoincrement
+//     NVIC_EnableIRQ(EXTI0_IRQn);
+
+//     // Interrupt status at barometer is cleared by reading drdy bit high
+//     volatile unsigned char interrupt_regaddr = reg_INT_STATUS;
+//     volatile unsigned char i2c_garbage_buffer;
+//     i2c_write2read(I2C1, BARO_I2C_ADDR, &interrupt_regaddr, 1, &i2c_garbage_buffer, 1);
+
+//     prev_sample = curr_sample;
+//     curr_sample = (int)(
+//                             i2c_read_buffer[2] << 16 |
+//                             i2c_read_buffer[1] << 8 |
+//                             i2c_read_buffer [2]
+//                         ) * MSB_TO_PASCALS;
+
+
+//     EXTI->PR1 = EXTI_PR1_PIF0; // Clear pending bit by setting it
+// }
+
+

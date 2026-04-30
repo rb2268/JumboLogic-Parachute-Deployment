@@ -1,25 +1,25 @@
 #include "ee14lib.h"
 
 // Mapping of Nucleo pin number to GPIO port
-static GPIO_TypeDef * g_GPIO_port[D13+1] = {
+static GPIO_TypeDef * g_GPIO_port[D13+1+1] = {
   GPIOA,GPIOA,GPIOA,GPIOA,  // A0=PA0,A1=PA1,A2=PA3,A3=PA4
   GPIOA,GPIOA,GPIOA,GPIOA,  // A4=PA5,A5=PA6,A6=PA7,A7=PA2
   GPIOA,GPIOA,GPIOA,GPIOB,  // D0=PA10,D1=PA9,D2=PA12,D3=PB0
   GPIOB,GPIOB,GPIOB,GPIOC,  // D4=PB7,D5=PB6,D6=PB1,D7=PC14
   GPIOC,GPIOA,GPIOA,GPIOB,  // D8=PC15,D9=PA8,D10=PA11,D11=PB5
-  GPIOB,GPIOB               // D12=PB4,D13=PB3.
+  GPIOB,GPIOB, GPIOA        // D12=PB4,D13=PB3.
 };
 
 // Mapping of Nucleo pin number to GPIO pin
 // Using this plust g_GPIO_port[] above, we can translate a Nucleo pin name into
 // the chip's actual GPIO port and pin number.
-static uint8_t g_GPIO_pin[D13+1] = {
+static uint8_t g_GPIO_pin[D13+1+1] = {
   0,1,3,4,    // A0=PA0,A1=PA1,A2=PA3,A3=PA4
   5,6,7,2,    // A4=PA5,A5=PA6,A6=PA7,A7=PA2
   10,9,12,0,  // D0=PA10,D1=PA9,D2=PA12,D3=PB0
   7,6,1,14,   // D4=PB7,D5=PB6,D6=PB1,D7=PC14
   15,8,11,5,  // D8=PC15,D9=PA8,D10=PA11,D11=PB5
-  4,3         // D12=PB4,D13=PB3.
+  4,3,15         // D12=PB4,D13=PB3.
 };
 
 // Enables a GPIO port (A, B, C, or H) by setting the appropriate bit in the RCC
