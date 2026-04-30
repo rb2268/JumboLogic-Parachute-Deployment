@@ -4,6 +4,7 @@
 #include "ee14lib.h"
 #include "stage.h"
 #include "time.h"
+#include "motor.h"
 
 
 #define I2C_SCL_PIN D1
@@ -30,7 +31,9 @@ int main()
     float ref_pressure = 0;
     float ref_altitude = 0;
 
-    bool past_apogee = false;
+    bool motor_opened = false;
+
+    motor_init(TIM16);
 
     while (true) {
         /*
@@ -53,5 +56,22 @@ int main()
         IF (flight_state.state > STANDBY):
             
         */
+
+        
+        if (get_time() % 2000 < 1000) {
+            if (!motor_opened){
+                NVIC_DisableIRQ(SysTick_IRQn);
+                motor_open(TIM16, A5);
+                NVIC_EnableIRQ(SysTick_IRQn);
+                motor_opened = true;
+            }
+        } else  {
+            if (motor_opened) {
+                NVIC_DisableIRQ(SysTick_IRQn);
+                motor_close(TIM16, A5);
+                NVIC_EnableIRQ(SysTick_IRQn);
+                motor_opened = false;
+            }
+        }
     }
 }
