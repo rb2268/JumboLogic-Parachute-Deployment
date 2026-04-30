@@ -91,7 +91,7 @@ void turnMotor(EE14Lib_Pin input) {
 
 
 void ejectMotorTime(uint32_t holdTime) {
-    printf("Delay here! Idk Why..");
+    printf("Delay here! Otherwise the program runs way too fast");
     if(!motorTriggered && (get_time() - timeStamp > holdTime)) {
         motor_open(TIM16, A5);
         motorTriggered = true;
