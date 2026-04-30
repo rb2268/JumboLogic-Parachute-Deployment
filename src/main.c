@@ -39,9 +39,10 @@ int main()
     i2c_init(I2C1, I2C_SCL_PIN, I2C_SDA_PIN);
 
     SysTick_Init();
-    setupButtons(A4);
+    setupButtons(A4, A6);
 
     while (true) {
         runButtons(A4);
+        turnMotor(A6);
     }
 }
