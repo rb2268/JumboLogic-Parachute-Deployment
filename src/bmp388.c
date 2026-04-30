@@ -25,7 +25,7 @@ void bmp388_init()
     volatile unsigned char i2c_write_buf[2];
 
     // set iir filter
-    volatile unsigned char iir_cfg = 0b10 << 1;
+    volatile unsigned char iir_cfg = 0b100 << 1;
     i2c_write_buf[0] = reg_CONFIG;
     i2c_write_buf[1] = iir_cfg;
     i2c_write(I2C1, BARO_I2C_ADDR, i2c_write_buf, 2);
@@ -37,9 +37,15 @@ void bmp388_init()
     i2c_write(I2C1, BARO_I2C_ADDR, i2c_write_buf, 2);
 
     // pressure oversampling 8x
-    volatile unsigned char osr_cfg = 0b011;
+    volatile unsigned char osr_cfg = 0b000011;
     i2c_write_buf[0] = reg_OSR;
     i2c_write_buf[1] = osr_cfg;
+    i2c_write(I2C1, BARO_I2C_ADDR, i2c_write_buf, 2);
+
+    // ENABLE THE PRESSURE SENSOR DUMBASS
+    volatile unsigned char pwr_cfg = 0b111111; // enable the temp sensor too ig
+    i2c_write_buf[0] = reg_PWR_CTRL;
+    i2c_write_buf[1] = pwr_cfg;
     i2c_write(I2C1, BARO_I2C_ADDR, i2c_write_buf, 2);
 
     // enable fifo bc idk if it's default enabled
@@ -49,7 +55,7 @@ void bmp388_init()
     //  - Return sensortime frame after the last valid data frame ... 0
     //  - Stop writing samples into FIFO when FIFO is full .......... 0
     //  - Enable fifo ............................................... 1
-    volatile unsigned char fifo_cfg = 0b01001;
+    volatile unsigned char fifo_cfg = 0b00000;
     i2c_write_buf[0] = reg_FIFO_CFG_1;
     i2c_write_buf[1] = fifo_cfg;
     i2c_write(I2C1, BARO_I2C_ADDR, i2c_write_buf, 2);
@@ -73,17 +79,34 @@ void bmp388_init()
 /***
  * Read once from the sensor
  */
-float bmp388_process()
+float bmp388_read()
 {
+    static float last_valid_value = 0.0;
+    
+    volatile unsigned char err_addr = reg_ERR_REG;
+    volatile unsigned char err;
+    if (i2c_write2read(I2C1, BARO_I2C_ADDR, &err_addr, 1, &err, 1)) {
+        if (err) {
+            printf("ERROR!!!\n");
+        }
+    }
+
     volatile unsigned char addr = reg_STATUS;
     volatile unsigned char status;
     if (i2c_write2read(I2C1, BARO_I2C_ADDR, &addr, 1, &status, 1)) {
-        printf("status: %x\n", status);
+        while (!(status & 0b10000)) {} // pressure data ready
     } else {
         printf("write 2 read failed\n");
     }
 
-    return 1.0;
+    volatile unsigned char pressure_addr = reg_PRESSURE_L;
+    volatile unsigned char pressure_data[3];
+    if (i2c_write2read(I2C1, BARO_I2C_ADDR, &pressure_addr, 1, pressure_data, 3)) {
+        volatile int pressure_bits = pressure_data[0] << 16 | pressure_data[1] << 8 | pressure_data[2];
+        printf("pressure bits: %lu\n", pressure_bits);
+        last_valid_value = (float) pressure_bits * MSB_TO_PASCALS;
+    }
+    return last_valid_value;
 }
 
 

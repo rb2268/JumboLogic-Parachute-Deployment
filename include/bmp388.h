@@ -37,6 +37,6 @@
 
 
 void bmp388_init();
-float bmp388_process();
+float bmp388_read();
 
 #endif

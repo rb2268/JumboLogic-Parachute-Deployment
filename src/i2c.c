@@ -158,7 +158,7 @@ bool i2c_write2read(I2C_TypeDef* i2c, unsigned char device_address, unsigned cha
     //   Set the device address (SADD)
     //   Set the number of bytes to transfer (NBYTES), and auto-send STOP
     //   once we've sent that many bytes.
-    uint32_t cr2 = I2C_CR2_RD_WRN | // Write mode, NO AUTOEND
+    uint32_t cr2 =  // Write mode, NO AUTOEND
                    writelen << I2C_CR2_NBYTES_Pos |
                    device_address << 1 | // Only bits 7:1 matter for 7-bit address
                    I2C_CR2_START;
@@ -179,6 +179,9 @@ bool i2c_write2read(I2C_TypeDef* i2c, unsigned char device_address, unsigned cha
         i2c->TXDR = writedata[i]; // TXIS is cleared when we write the next byte
     }
 
+    // wait for "transfer complete"
+    while(!(i2c->ISR & I2C_ISR_TC)) {}
+
     // Check whether we got ACK or NCK
     if(i2c->ISR & I2C_ISR_NACKF){
         i2c->ICR = I2C_ICR_NACKCF; // Clear the NCK flag
@@ -187,14 +190,14 @@ bool i2c_write2read(I2C_TypeDef* i2c, unsigned char device_address, unsigned cha
 
     // modify so that now we read, with a new start bit
     cr2 = I2C_CR2_AUTOEND |
-                   I2C_CR2_RD_WRN | // READ mode
-                   readlen << I2C_CR2_NBYTES_Pos |
-                   device_address << 1 | // Only bits 7:1 matter for 7-bit address
-                   I2C_CR2_START;
+          I2C_CR2_RD_WRN | // READ mode
+          readlen << I2C_CR2_NBYTES_Pos |
+          device_address << 1 | // Only bits 7:1 matter for 7-bit address
+          I2C_CR2_START;
     i2c->CR2 = cr2;
 
     // Now read bytes one at a time
-    for(int i = 0; i < writelen; i++){
+    for(int i = 0; i < readlen; i++){
         while(!(i2c->ISR & I2C_ISR_RXNE)) {} // Wait until data is available
         readdata[i] = i2c->RXDR;
     }

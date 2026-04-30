@@ -53,7 +53,13 @@ int main()
     bool past_apogee = false;
 
     while (true) {
-        printf("read: %f", bmp388_process());
+        // printf("Pressure: %f\n", bmp388_read());
+        bmp388_read();
+
+        // int time = get_time();
+
+        // while (get_time() < time + 1000) {}
+
         /*
         LOGIC:
         COLLECT BARO SAMPLE
