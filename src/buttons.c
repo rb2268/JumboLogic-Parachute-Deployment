@@ -7,6 +7,9 @@ typedef enum { BLINKING, STEADY } State;
 State currentState = BLINKING;
 int currentLed = 0;
 EE14Lib_Pin leds[] = {A0, A1, A2, A3};
+uint32_t deploymentHeights[] = {1000, 2000, 5000, 10000};
+uint32_t deploymentHeight;
+uint32_t timeStamp;
 uint32_t lastButtonPress = 0;
 
 bool buttonPressed = false;
@@ -15,6 +18,7 @@ bool motorButtonPressed = false;
 
 bool lastMotorButtonPressed = true;
 bool motorEjectOn = false;
+bool motorTriggered = false;
 
 
 void setupButtons(EE14Lib_Pin input1, EE14Lib_Pin input2) {
@@ -48,10 +52,16 @@ void runButtons(EE14Lib_Pin input){
         }
     }
     if(now - lastButtonPress > 5000) {
-        currentState = STEADY;
+        if (currentState != STEADY) {
+            currentState = STEADY;
+            timeStamp = now; 
+            motorTriggered = false;
+        }
     }
     if(currentState == STEADY) {
         gpio_write(leds[currentLed], 1);
+        deploymentHeight = deploymentHeights[currentLed];
+        ejectMotorTime(deploymentHeight);
     }
     else {
         // Toggle LED every 250ms for blinking
@@ -76,4 +86,14 @@ void turnMotor(EE14Lib_Pin input) {
         }
     }
     lastMotorButtonPressed = motorButtonPressed;
+}
+
+
+
+void ejectMotorTime(uint32_t holdTime) {
+    printf("Delay here! Idk Why..");
+    if(!motorTriggered && (get_time() - timeStamp > holdTime)) {
+        motor_open(TIM16, A5);
+        motorTriggered = true;
+    }
 }
