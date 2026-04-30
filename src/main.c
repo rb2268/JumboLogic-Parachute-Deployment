@@ -7,7 +7,6 @@
 #include "stage.h"
 #include "time.h"
 #include "motor.h"
-#include "buttons.h"
 
 
 #define I2C_SCL_PIN D1
@@ -34,9 +33,9 @@ void config_gpio_interrupt(void)
 
 int main() {
     host_serial_init(9600);
-    // i2c_init(I2C1, I2C_SCL_PIN, I2C_SDA_PIN);
+    i2c_init(I2C1, I2C_SCL_PIN, I2C_SDA_PIN);
     SysTick_Init();
-    // bmp388_init();
+    bmp388_init();
     config_gpio_interrupt();
 
     for (volatile int i = 0; i < 20; i++) {
@@ -54,10 +53,14 @@ int main() {
 
     motor_init(TIM16);
 
-    setupButtons(A4, A6);
-
     while (true) {
-        // printf("read: %f", bmp388_process());
+        // printf("Pressure: %f\n", bmp388_read());
+        bmp388_read();
+
+        // int time = get_time();
+
+        // while (get_time() < time + 1000) {}
+
         /*
         LOGIC:
         COLLECT BARO SAMPLE
@@ -80,23 +83,26 @@ int main() {
         */
 
         
-        // if (get_time() % 2000 < 1000) {
-        //     if (!motor_opened){
-        //         NVIC_DisableIRQ(SysTick_IRQn);
-        //         motor_open(TIM16, A5);
-        //         NVIC_EnableIRQ(SysTick_IRQn);
-        //         motor_opened = true;
-        //     }
-        // } else  {
-        //     if (motor_opened) {
-        //         NVIC_DisableIRQ(SysTick_IRQn);
-        //         motor_close(TIM16, A5);
-        //         NVIC_EnableIRQ(SysTick_IRQn);
-        //         motor_opened = false;
-        //     }
-        // }
+        if (get_time() % 2000 < 1000) {
+            if (!motor_opened){
+                NVIC_DisableIRQ(SysTick_IRQn);
+                motor_open(TIM16, A5);
+                NVIC_EnableIRQ(SysTick_IRQn);
+                motor_opened = true;
+            }
+        } else  {
+            if (motor_opened) {
+                NVIC_DisableIRQ(SysTick_IRQn);
+                motor_close(TIM16, A5);
+                NVIC_EnableIRQ(SysTick_IRQn);
+                motor_opened = false;
+            }
+        }
 
-        runButtons(A4);
-        turnMotor(A6);
+        setupButtons(A4);
+
+        while (true) {
+            runButtons(A4);
+        }
     }
 }
