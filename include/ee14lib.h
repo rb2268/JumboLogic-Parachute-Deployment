@@ -74,4 +74,12 @@ bool i2c_write(I2C_TypeDef* i2c, unsigned char device_address, unsigned char* da
 bool i2c_read(I2C_TypeDef* i2c, unsigned char device_address, unsigned char* data, unsigned char len);
 bool i2c_write2read(I2C_TypeDef* i2c, unsigned char device_address, unsigned char* writedata, unsigned char writelen,
                                                                     unsigned char* readdata, unsigned char readlen);
+
+
+EE14Lib_Err gpio_config_alternate_function(EE14Lib_Pin pin, unsigned int function);
+EE14Lib_Err timer_config_freerun(TIM_TypeDef* const timer, const unsigned int prescalar);
+uint32_t timer_get_count(TIM_TypeDef* const timer);
+EE14Lib_Err timer_config_pwm(TIM_TypeDef* const timer, const unsigned int freq_hz);
+EE14Lib_Err timer_config_channel_pwm(TIM_TypeDef* const timer, const EE14Lib_Pin pin, const unsigned int duty);
+
 #endif

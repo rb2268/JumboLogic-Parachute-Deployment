@@ -6,6 +6,7 @@
 #include "bmp388.h"
 #include "stage.h"
 #include "time.h"
+#include "motor.h"
 
 
 #define I2C_SCL_PIN D1
@@ -30,9 +31,7 @@ void config_gpio_interrupt(void)
     NVIC_EnableIRQ(EXTI0_IRQn);
 }
 
-
-int main()
-{
+int main() {
     host_serial_init(9600);
     i2c_init(I2C1, I2C_SCL_PIN, I2C_SDA_PIN);
     SysTick_Init();
@@ -50,7 +49,9 @@ int main()
     float ref_pressure = 0;
     float ref_altitude = 0;
 
-    bool past_apogee = false;
+    bool motor_opened = false;
+
+    motor_init(TIM16);
 
     while (true) {
         // printf("Pressure: %f\n", bmp388_read());
@@ -80,5 +81,28 @@ int main()
         IF (flight_state.state > STANDBY):
             
         */
+
+        
+        if (get_time() % 2000 < 1000) {
+            if (!motor_opened){
+                NVIC_DisableIRQ(SysTick_IRQn);
+                motor_open(TIM16, A5);
+                NVIC_EnableIRQ(SysTick_IRQn);
+                motor_opened = true;
+            }
+        } else  {
+            if (motor_opened) {
+                NVIC_DisableIRQ(SysTick_IRQn);
+                motor_close(TIM16, A5);
+                NVIC_EnableIRQ(SysTick_IRQn);
+                motor_opened = false;
+            }
+        }
+
+        setupButtons(A4);
+
+        while (true) {
+            runButtons(A4);
+        }
     }
 }
