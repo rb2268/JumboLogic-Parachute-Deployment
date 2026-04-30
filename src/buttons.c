@@ -1,4 +1,6 @@
 #include "ee14lib.h"
+#include "motor.h"
+#include "buttons.h"
 
 // State definitions
 typedef enum { BLINKING, STEADY } State;
