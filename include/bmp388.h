@@ -11,6 +11,10 @@
 #define reg_PRESSURE_M 0x05
 #define reg_PRESSURE_L 0x04
 
+#define reg_TEMP_H     0x09 // same here
+#define reg_TEMP_M     0x08
+#define reg_TEMP_L     0x07
+
 #define reg_SENSRTIM_H 0x0E // same here
 #define reg_SENSRTIM_M 0x0D
 #define reg_SENSRTIM_L 0x0C
