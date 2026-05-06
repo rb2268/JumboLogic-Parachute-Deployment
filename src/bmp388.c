@@ -37,7 +37,8 @@ typedef struct BMP388_calib_data {
     float par_p11; // 0x45
 } *CalibDat;
 
-CalibDat calib_data;
+struct BMP388_calib_data calib_data_storage;
+CalibDat calib_data = &calib_data_storage;
 
 void fill_in_calib_data(CalibDat calib_data)
 {
@@ -52,25 +53,28 @@ void fill_in_calib_data(CalibDat calib_data)
     temp = output_buf[0] | output_buf[1] << 8;
     calib_data->par_t2 = (float) temp / 1073741824.0;
 
+    
     reg_addr = 0x35;
     i2c_write2read(I2C1, BARO_I2C_ADDR, &reg_addr, 1, output_buf, 1);
     temp = output_buf[0];
-    calib_data->par_t3 = (float) temp / 2.814749767E14;
+    calib_data->par_t3 = (float) (int8_t)temp / 2.814749767E14;
 
     reg_addr = 0x36;
     i2c_write2read(I2C1, BARO_I2C_ADDR, &reg_addr, 1, output_buf, 2);
-    temp = output_buf[0] | output_buf[1] << 8;
-    calib_data->par_p1 = (((float) temp) - 16384) / 1048576.0;
+    temp = (int16_t)(output_buf[0] | output_buf[1] << 8);
+    calib_data->par_p1 = ((float)temp - 16384.0f) / 1048576.0f;
+
+
 
     reg_addr = 0x38;
     i2c_write2read(I2C1, BARO_I2C_ADDR, &reg_addr, 1, output_buf, 2);
-    temp = output_buf[0] | output_buf[1] << 8;
-    calib_data->par_p2 = ((float) temp - 16384.0) / 536870912.0;
+    temp = (int16_t)(output_buf[0] | output_buf[1] << 8);
+    calib_data->par_p2 = ((float)temp - 16384.0f) / 536870912.0f;
 
     reg_addr = 0x3A;
     i2c_write2read(I2C1, BARO_I2C_ADDR, &reg_addr, 1, output_buf, 2);
-    calib_data->par_p3 = (float) output_buf[0] / 4294967296.0;
-    calib_data->par_p4 = (float) output_buf[1] / 1.374389535E11;
+    calib_data->par_p3 = (float) (int8_t)output_buf[0] / 4294967296.0;
+    calib_data->par_p4 = (float) (int8_t)output_buf[1] / 1.374389535E11;
 
     reg_addr = 0x3C;
     i2c_write2read(I2C1, BARO_I2C_ADDR, &reg_addr, 1, output_buf, 2);
@@ -85,21 +89,21 @@ void fill_in_calib_data(CalibDat calib_data)
     reg_addr = 0x40;
     i2c_write2read(I2C1, BARO_I2C_ADDR, &reg_addr, 1, output_buf, 2);
     temp = output_buf[0];
-    calib_data->par_p7 = ((float) temp) / 256.0;
+    calib_data->par_p7 = (float) (int8_t)temp / 256.0;
     temp = output_buf[1];
-    calib_data->par_p8 = ((float) temp) / 32768.0;
+    calib_data->par_p8 = (float) (int8_t)temp / 32768.0;
 
     reg_addr = 0x42;
     i2c_write2read(I2C1, BARO_I2C_ADDR, &reg_addr, 1, output_buf, 2);
-    temp = output_buf[0] | output_buf[1] << 8;
-    calib_data->par_p9 = ((float) temp) / 281474976710656.0;
+    temp = (int16_t)(output_buf[0] | output_buf[1] << 8);  // needs (int16_t) cast
+    calib_data->par_p9 = ((float)temp) / 281474976710656.0f;
 
     reg_addr = 0x44;
     i2c_write2read(I2C1, BARO_I2C_ADDR, &reg_addr, 1, output_buf, 2);
     temp = output_buf[0];
-    calib_data->par_p10 = ((float) temp) / 221474976710656.0;
+    calib_data->par_p10 = (float) (int8_t)temp / 281474976710656.0;
     temp = output_buf[1];
-    calib_data->par_p11 = ((float) temp) / 36893488147419103232.0;
+    calib_data->par_p11 = (float) (int8_t)temp / 36893488147419103232.0;
 }
 
 

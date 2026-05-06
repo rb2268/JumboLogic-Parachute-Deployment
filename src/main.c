@@ -55,7 +55,7 @@ int main() {
 
     while (true) {
         // printf("Pressure: %f\n", bmp388_read());
-        bmp388_read();
+        // bmp388_read();
 
         // int time = get_time();
 
@@ -99,10 +99,12 @@ int main() {
             }
         }
 
-        setupButtons(A4);
+        setupButtons(A4, A6);
 
         while (true) {
             runButtons(A4);
+            turnMotor(A6);
+            printf("Pressure: %f\n", bmp388_read());
         }
     }
 }
