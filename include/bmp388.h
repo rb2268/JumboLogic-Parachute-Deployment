@@ -42,5 +42,6 @@
 
 void bmp388_init();
 float bmp388_read();
+float convertToFeet(float pascals);
 
 #endif

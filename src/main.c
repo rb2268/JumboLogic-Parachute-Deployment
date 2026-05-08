@@ -53,6 +53,8 @@ int main() {
 
     motor_init(TIM16);
 
+    printf("Pressure Altitude \n");
+
     while (true) {
         // printf("Pressure: %f\n", bmp388_read());
         // bmp388_read();
@@ -104,7 +106,11 @@ int main() {
         while (true) {
             runButtons(A4);
             turnMotor(A6);
-            printf("Pressure: %f\n", bmp388_read());
+            float pressure = bmp388_read();
+            float altitude = convertToFeet(pressure);
+            printf("%f, ", pressure);
+            printf("%f\n", altitude);
+
         }
     }
 }

@@ -266,10 +266,25 @@ float bmp388_read()
         // printf("pressure bits: %lu\n", pressure_bits);
         last_valid_pressure = BMP388_compensate_pressure(pressure_bits, calib_data);
     }
-    printf("pressure: %lu\n", (long unsigned) last_valid_pressure);
+    // printf("pressure: %lu\n", (long unsigned) last_valid_pressure);
+
     return last_valid_pressure;
 }
 
+/*
+ * Handles Pressure Conversion from Pascals to feet
+ * Input(s): static float pascals
+ * Output(s): static float feet
+ * 
+*/
+
+float convertToFeet(float pascals) {
+    //Formula to translate between pressure and height
+    float ratio = (float)pascals / 101325.0f;
+    float feet = 44330.76f * (1.0f - powf(ratio, 0.190263f));
+    return feet;
+    
+}
 
 
 
